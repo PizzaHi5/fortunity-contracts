@@ -135,8 +135,12 @@ contract BaseToken is IBaseToken, IIndexPrice, VirtualToken, BlockContext, BaseT
     /// @dev we overwrite the index price in BaseToken depending on the status
     ///      1. Open: the price is from the price feed
     ///      2. Paused or Closed: the price is twap when the token was paused
+    
+    /// Modify IndexPrice here with CPI Truflation data
     function getIndexPrice(uint256 interval) public view override returns (uint256) {
         if (_status == IBaseToken.Status.Open) {
+            //Change return output with truflation
+            // IndexPrice = 1 + CPI/100
             return _formatDecimals(IPriceFeedV2(_priceFeed).getPrice(interval));
         }
 

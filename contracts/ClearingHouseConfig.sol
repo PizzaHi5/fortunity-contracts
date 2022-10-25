@@ -42,6 +42,7 @@ contract ClearingHouseConfig is IClearingHouseConfig, SafeOwnable, ClearingHouse
         _partialCloseRatio = 0.25e6; // partial close ratio, 25% in decimal 6
         _maxFundingRate = 0.1e6; // max funding rate, 10% in decimal 6
         _twapInterval = 15 minutes;
+        _twapIntervalTruflation = 1 days; //truflation CPI data
         _settlementTokenBalanceCap = 0;
     }
 
