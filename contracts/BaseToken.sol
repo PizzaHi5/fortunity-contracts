@@ -22,10 +22,15 @@ contract BaseToken is IBaseToken, IIndexPrice, VirtualToken, BlockContext, BaseT
     uint256 internal constant _MAX_WAITING_PERIOD = 5 days;
 
     //
-    // INTERNAL
+    // STRUCT
     //
 
     //uint256 truflation internal _TRUFLATION_DATA;
+    //string service, 
+    //string keypath, 
+    //string abi, 
+    //string multiplier, 
+    //string data request
 
     //
     // EXTERNAL NON-VIEW
