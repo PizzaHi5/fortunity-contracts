@@ -70,5 +70,7 @@
         "VUSD",
         "Liquidatable"
     ],
-    "solidity.defaultCompiler": "localNodeModule",
+    "solidity.defaultCompiler": "remote",
+    "solidity.compileUsingRemoteVersion": "v0.7.6+commit.7338295f",
+    "solidity.compileUsingLocalVersion": "/mnt/c/Users/PizzaHi5/git_clones/fortunity-contracts/soljson-v0.7.6+commit.7338295f.js",
 }
