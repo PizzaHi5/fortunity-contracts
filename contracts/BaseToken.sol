@@ -152,6 +152,7 @@ contract BaseToken is IBaseToken, IIndexPrice, VirtualToken, BlockContext, BaseT
         if (_status == IBaseToken.Status.Open) {
             //Change return output with truflation
             // IndexPrice = 1 + CPI/100
+            uint256 _indexPrice = 
             return _formatDecimals(IPriceFeedV2(_priceFeed).getPrice(interval));
         }
 

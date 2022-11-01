@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.7.6;
 
+//running in local Forge implementation, ref https://github.com/PizzaHi5/Fortunity_Forge_Tests
+//need to update remappings to npm package for hardhat
+
 import { Strings } from "./FortStrings.sol";
 import { ChainlinkClient } from "@chainlink/contracts/src/v0.7/ChainlinkClient.sol";
 import { ConfirmedOwner } from "@chainlink/contracts/src/v0.7/ConfirmedOwner.sol";
@@ -17,7 +20,7 @@ contract FortTfi is ChainlinkClient, ConfirmedOwner(msg.sender) {
     uint256 public fee;
 
     //
-    // EXTERNAL NON-VIEW
+    // INTERNAL NON-VIEW
     //
 
     function initialize(
@@ -26,7 +29,7 @@ contract FortTfi is ChainlinkClient, ConfirmedOwner(msg.sender) {
         uint256 fee_,
         address token_
         //changed from initilizer ConfirmedOwner
-    ) external onlyOwner {
+    ) internal onlyOwner {
         setChainlinkToken(token_);
         oracleId = oracleId_;
         jobId = jobId_;
