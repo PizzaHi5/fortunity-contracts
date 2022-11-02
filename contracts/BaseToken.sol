@@ -8,6 +8,7 @@ import { VirtualToken } from "./VirtualToken.sol";
 import { BaseTokenStorageV2 } from "./storage/BaseTokenStorage.sol";
 import { IBaseToken } from "./interface/IBaseToken.sol";
 import { BlockContext } from "./base/BlockContext.sol";
+import { FortTFI } from "./fortunity-modifications/FortTFI.sol";
 
 // never inherit any new stateful contract. never change the orders of parent stateful contracts
 contract BaseToken is IBaseToken, IIndexPrice, VirtualToken, BlockContext, BaseTokenStorageV2 {
@@ -150,12 +151,17 @@ contract BaseToken is IBaseToken, IIndexPrice, VirtualToken, BlockContext, BaseT
     /// Modify IndexPrice here with CPI Truflation data
     function getIndexPrice(uint256 interval) public view override returns (uint256) {
         if (_status == IBaseToken.Status.Open) {
-            //Change return output with truflation
+            uint256 latestTfiData;
+            if (block.timestamp >= FortTFI.lastTfiUpdatedBlock.add(FortTFI.tfiUpdateInterval)) {
+                latestTfiData = FortTFI.getUpdatedTfiValue();
+            } else {
+                latestTfiData = FortTFI.result;
+            }
             // IndexPrice = 1 + CPI/100
-            uint256 _indexPrice = 
-            return _formatDecimals(IPriceFeedV2(_priceFeed).getPrice(interval));
+            uint256 _indexPrice = latestTfiData.div(100).add(1);
+            // (IndexPrice - CurrentPrice), changed from only current price
+            return _formatDecimals(_indexPrice.sub(IPriceFeedV2(_priceFeed).getPrice(interval)));
         }
-
         return _pausedIndexPrice;
     }
 

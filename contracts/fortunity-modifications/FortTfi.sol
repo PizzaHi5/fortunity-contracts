@@ -15,6 +15,8 @@ contract FortTfi is ChainlinkClient, ConfirmedOwner(msg.sender) {
 
     bytes public result;
     mapping(bytes32 => bytes) public results;
+    uint256 public lastTfiUpdatedBlock;
+    uint256 public tfiUpdateInterval = 1 days;
     address public oracleId;
     string public jobId;
     uint256 public fee;
@@ -48,7 +50,7 @@ contract FortTfi is ChainlinkClient, ConfirmedOwner(msg.sender) {
         string memory multiplier_
         ) public returns (bytes32 requestId) {
           Chainlink.Request memory req = buildChainlinkRequest(
-            _bytesToBytes32(bytes(jobId)),
+            bytesToBytes32(bytes(jobId)),
             address(this), this.fulfillBytes.selector);
         req.add("service", service_);
         req.add("data", data_);
@@ -69,7 +71,7 @@ contract FortTfi is ChainlinkClient, ConfirmedOwner(msg.sender) {
         require(LinkTokenInterface(getToken()).transferFrom(
                msg.sender, address(this), fee_), "transfer failed");
         Chainlink.Request memory req = buildChainlinkRequest(
-            _bytesToBytes32(bytes(jobId)),
+            bytesToBytes32(bytes(jobId)),
             address(this), this.fulfillBytes.selector);
         req.add("service", service_);
         req.add("data", data_);
@@ -85,6 +87,11 @@ contract FortTfi is ChainlinkClient, ConfirmedOwner(msg.sender) {
         public recordChainlinkFulfillment(_requestId) {
         result = bytesData;
         results[_requestId] = bytesData;
+        lastTfiUpdatedBlock = block.timestamp;
+    }
+
+    function getUpdatedTfiValue() public returns (uint256) {
+        
     }
 
     //
@@ -107,6 +114,16 @@ contract FortTfi is ChainlinkClient, ConfirmedOwner(msg.sender) {
         setChainlinkToken(_address);
     }
 
+    function changeTfiUpdatedInterval(uint256 _interval) public onlyOwner {
+        tfiUpdatedInterval = _interval;
+    }
+
+    //A fallback chainlink token return function to Proxy
+    function returnTokensToProxy () public onlyOwner {
+        LinkTokenInterface(getToken()).transfer(msg.sender, 
+        LinkTokenInterface(getToken()).balanceOf(address(this)));
+    }
+
     //
     // PUBLIC VIEW
     //
@@ -123,21 +140,15 @@ contract FortTfi is ChainlinkClient, ConfirmedOwner(msg.sender) {
     // INTERNAL PURE
     //
 
-    function toInt256(bytes memory _bytes) 
-    internal 
-    pure
+    function toInt256(bytes memory _bytes) internal pure
       returns (int256 value) {
           assembly {
             value := mload(add(_bytes, 0x20))
       }
    }
 
-    //
-    // PRIVATE PURE
-    //
-
-    //Converts first 32 bytes of input bytes
-    function _bytesToBytes32(bytes memory source) private pure 
+    // @dev Converts first 32 bytes of input bytes
+    function bytesToBytes32(bytes memory source) internal pure 
     returns (bytes32 result_) {
         if (source.length == 0) {
             return 0x0;
