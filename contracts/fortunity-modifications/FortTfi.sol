@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.7.6;
+pragma abicoder v2;
 
 //running in local Forge implementation, ref https://github.com/PizzaHi5/Fortunity_Forge_Tests
 //need to update remappings to npm package for hardhat
@@ -9,9 +10,11 @@ import { ChainlinkClient } from "@chainlink/contracts/src/v0.7/ChainlinkClient.s
 import { ConfirmedOwner } from "@chainlink/contracts/src/v0.7/ConfirmedOwner.sol";
 import { Chainlink } from "@chainlink/contracts/src/v0.7/Chainlink.sol";
 import { LinkTokenInterface } from "@chainlink/contracts/src/v0.7/interfaces/LinkTokenInterface.sol";
+import { SafeMathUpgradeable } from "@openzeppelin-upgradeable/contracts/math/SafeMathUpgradeable.sol";
 
 contract FortTfi is ChainlinkClient, ConfirmedOwner(msg.sender) {
     using Chainlink for Chainlink.Request;
+    using SafeMathUpgradeable for uint256;
 
     bytes public result;
     mapping(bytes32 => bytes) public results;
@@ -20,6 +23,19 @@ contract FortTfi is ChainlinkClient, ConfirmedOwner(msg.sender) {
     address public oracleId;
     string public jobId;
     uint256 public fee;
+
+    //
+    // STRUCT
+    //
+    
+    struct RequestData {
+        string _service;
+        string _data;
+        string _keypath;
+        string _abi;
+        string _multiplier;
+    }
+    RequestData TfiRequest;
 
     //
     // INTERNAL NON-VIEW
@@ -36,6 +52,13 @@ contract FortTfi is ChainlinkClient, ConfirmedOwner(msg.sender) {
         oracleId = oracleId_;
         jobId = jobId_;
         fee = fee_;
+        TfiRequest = RequestData(
+            "truflation/current", 
+            "", 
+            "int256", 
+            "1", 
+            '{"location":"us"}'
+        );
     }
 
     //
@@ -43,29 +66,21 @@ contract FortTfi is ChainlinkClient, ConfirmedOwner(msg.sender) {
     //
     
     function doRequest(
-        string memory service_,
-        string memory data_,
-        string memory keypath_,
-        string memory abi_,
-        string memory multiplier_
+        RequestData memory request
         ) public returns (bytes32 requestId) {
           Chainlink.Request memory req = buildChainlinkRequest(
             bytesToBytes32(bytes(jobId)),
             address(this), this.fulfillBytes.selector);
-        req.add("service", service_);
-        req.add("data", data_);
-        req.add("keypath", keypath_);
-        req.add("abi", abi_);
-        req.add("multiplier", multiplier_);
+        req.add("service", request._service);
+        req.add("data", request._data);
+        req.add("keypath", request._keypath);
+        req.add("abi", request._abi);
+        req.add("multiplier", request._multiplier);
         return sendChainlinkRequestTo(oracleId, req, fee);
     }
 
     function doTransferAndRequest(
-        string memory service_,
-        string memory data_,
-        string memory keypath_,
-        string memory abi_,
-        string memory multiplier_,
+        RequestData memory request,
         uint256 fee_
         ) public returns (bytes32 requestId) {
         require(LinkTokenInterface(getToken()).transferFrom(
@@ -73,11 +88,11 @@ contract FortTfi is ChainlinkClient, ConfirmedOwner(msg.sender) {
         Chainlink.Request memory req = buildChainlinkRequest(
             bytesToBytes32(bytes(jobId)),
             address(this), this.fulfillBytes.selector);
-        req.add("service", service_);
-        req.add("data", data_);
-        req.add("keypath", keypath_);
-        req.add("abi", abi_);
-        req.add("multiplier", multiplier_);
+        req.add("service", request._service);
+        req.add("data", request._data);
+        req.add("keypath", request._keypath);
+        req.add("abi", request._abi);
+        req.add("multiplier", request._multiplier);
         req.add("refundTo",
                 Strings.toHexString(uint256(uint160(msg.sender)), 20));
         return sendChainlinkRequestTo(oracleId, req, fee_);
@@ -90,8 +105,18 @@ contract FortTfi is ChainlinkClient, ConfirmedOwner(msg.sender) {
         lastTfiUpdatedBlock = block.timestamp;
     }
 
-    function getUpdatedTfiValue() public returns (uint256) {
-        
+    function getUpdatedTfiValue() public returns (int256 tfiValue) {
+        if (block.timestamp >= lastTfiUpdatedBlock.add(tfiUpdateInterval)) {
+            return getInt256(doTransferAndRequest(TfiRequest, fee));
+        } else {
+            return getInt256(bytesToBytes32(result));
+        }
+    }
+
+    //A fallback chainlink token return function to Proxy
+    function returnTokensToProxy () public onlyOwner {
+        LinkTokenInterface(getToken()).transfer(msg.sender, 
+        LinkTokenInterface(getToken()).balanceOf(address(this)));
     }
 
     //
@@ -114,14 +139,28 @@ contract FortTfi is ChainlinkClient, ConfirmedOwner(msg.sender) {
         setChainlinkToken(_address);
     }
 
-    function changeTfiUpdatedInterval(uint256 _interval) public onlyOwner {
-        tfiUpdatedInterval = _interval;
+    function changeTfiUpdateInterval(uint256 _interval) public onlyOwner {
+        tfiUpdateInterval = _interval;
     }
 
-    //A fallback chainlink token return function to Proxy
-    function returnTokensToProxy () public onlyOwner {
-        LinkTokenInterface(getToken()).transfer(msg.sender, 
-        LinkTokenInterface(getToken()).balanceOf(address(this)));
+    function changeService(string memory service_) public onlyOwner {
+        TfiRequest._service = service_;
+    }
+
+    function changeData(string memory data_) public onlyOwner {
+        TfiRequest._data = data_;
+    }
+
+    function changeKeypath(string memory keypath_) public onlyOwner {
+        TfiRequest._keypath = keypath_;
+    }
+
+    function changeAbi(string memory abi_) public onlyOwner {
+        TfiRequest._abi = abi_;
+    }
+
+    function changeMultiplier(string memory multiplier_) public onlyOwner {
+        TfiRequest._multiplier = multiplier_;
     }
 
     //

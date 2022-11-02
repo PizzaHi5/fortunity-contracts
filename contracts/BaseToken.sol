@@ -151,12 +151,7 @@ contract BaseToken is IBaseToken, IIndexPrice, VirtualToken, BlockContext, BaseT
     /// Modify IndexPrice here with CPI Truflation data
     function getIndexPrice(uint256 interval) public view override returns (uint256) {
         if (_status == IBaseToken.Status.Open) {
-            uint256 latestTfiData;
-            if (block.timestamp >= FortTFI.lastTfiUpdatedBlock.add(FortTFI.tfiUpdateInterval)) {
-                latestTfiData = FortTFI.getUpdatedTfiValue();
-            } else {
-                latestTfiData = FortTFI.result;
-            }
+            uint256 latestTfiData = FortTfi.getUpdatedTfiValue();
             // IndexPrice = 1 + CPI/100
             uint256 _indexPrice = latestTfiData.div(100).add(1);
             // (IndexPrice - CurrentPrice), changed from only current price
