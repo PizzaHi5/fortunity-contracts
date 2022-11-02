@@ -18,7 +18,7 @@ contract FortTfi is ChainlinkClient, ConfirmedOwner(msg.sender) {
 
     bytes public result;
     mapping(bytes32 => bytes) public results;
-    uint256 public lastTfiUpdatedBlock;
+    mapping(bytes => uint256) public lastTfiUpdatedBlock;
     uint256 public tfiUpdateInterval = 1 days;
     address public oracleId;
     string public jobId;
@@ -102,21 +102,16 @@ contract FortTfi is ChainlinkClient, ConfirmedOwner(msg.sender) {
         public recordChainlinkFulfillment(_requestId) {
         result = bytesData;
         results[_requestId] = bytesData;
-        lastTfiUpdatedBlock = block.timestamp;
+        lastTfiUpdatedBlock[result] = block.timestamp;
     }
 
+    // Called by QuoteToken returning current Tfi Value,
     function getUpdatedTfiValue() public returns (int256 tfiValue) {
-        if (block.timestamp >= lastTfiUpdatedBlock.add(tfiUpdateInterval)) {
+        if (block.timestamp >= lastTfiUpdatedBlock[result].add(tfiUpdateInterval)) {
             return getInt256(doTransferAndRequest(TfiRequest, fee));
         } else {
             return getInt256(bytesToBytes32(result));
         }
-    }
-
-    //A fallback chainlink token return function to Proxy
-    function returnTokensToProxy () public onlyOwner {
-        LinkTokenInterface(getToken()).transfer(msg.sender, 
-        LinkTokenInterface(getToken()).balanceOf(address(this)));
     }
 
     //
@@ -161,6 +156,16 @@ contract FortTfi is ChainlinkClient, ConfirmedOwner(msg.sender) {
 
     function changeMultiplier(string memory multiplier_) public onlyOwner {
         TfiRequest._multiplier = multiplier_;
+    }
+
+    //
+    // PUBLIC PAYABLE ONLY-OWNER
+    //
+
+    //A fallback chainlink token return function to Proxy
+    function returnTokensToProxy () public payable onlyOwner {
+        LinkTokenInterface(getToken()).transfer(msg.sender, 
+        LinkTokenInterface(getToken()).balanceOf(address(this)));
     }
 
     //
