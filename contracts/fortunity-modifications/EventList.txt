@@ -1,0 +1,35 @@
+IExchange
+FundingUpdated (base token, current market price, current index price)
+AccountBalanceChange (address accountBalance)
+
+IInsuranceFund 
+BorrowerChanged (address borrower)
+Repaid (repaid amount, token balance after repay)
+
+IVault
+Deposited (address collateral token, address trader, amount)
+Withdrawn (same as above)
+Collerateral Liquidated (trader, collateral token, liquidator, collateral,
+   settlement w/o insurance fund, insurance fund fee, discount ratio)
+BadDebtSettled (trader, amount)
+
+IClearingHouse
+(Taker called events)
+Position Liquidated (trader, base token, position notional, position size,
+   liquidator)
+Position Changed (trader, base token, exchange position size, exchange
+   position notional, fee, open notional, realized Pnl, square root price X96)
+Position Closed (trader, base token, close size, close notional, realized Pnl,
+   closed price)
+Funding Payment Settled (trader, base token, funding payment)
+(Maker called events)
+Liquidity Changed (maker, base token, quote token, lower tick, upper tick, base,
+   quote, liquidity, quote fee)
+
+IBaseToken
+PriceFeedChanged (address price feed)
+
+IAccountBalances
+PnlRealized
+
+
