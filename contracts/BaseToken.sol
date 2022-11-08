@@ -154,7 +154,7 @@ contract BaseToken is IBaseToken, IIndexPrice, VirtualToken, BlockContext, BaseT
             // (IndexPrice * (1 + CPI/100)), changed from returning only Index Price
             return _formatDecimals(mul(
                 IPriceFeedV2(_priceFeed).getPrice(interval),
-                FortTfi.getUpdatedTfiValue().div(100).add(1)
+                FortTfi.getUpdatedTfiValue().div(100).add(10**(_priceFeedDecimals))
                 ));
         } 
         return _pausedIndexPrice;
